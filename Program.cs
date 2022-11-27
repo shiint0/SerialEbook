@@ -29,7 +29,7 @@ namespace SerialEbook
                     await builder.AddStylesheet("default", serial.StyleSheet);
                 
                
-                await chapterPipeline.ForEachAwaitAsync(chapter => builder.AddChapter(chapter.Title, cb => cb.AddPage(chapter.Title, chapter.Body)));
+                await chapterPipeline.ForEachAwaitAsync((chapter, index) => builder.AddChapter(chapter.Title, cb => cb.AddPage($"{index}-{chapter.Title}", chapter.Body)));
             }            
         }
     }
