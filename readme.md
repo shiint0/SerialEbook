@@ -1,4 +1,4 @@
-#Serial Ebook Creator
+# Serial Ebook Creator
 Downloads a web serial and turns into an ebook scraping specific HTML to find chapter titles, bodies, and links. Currently only supports one web serial
 
 *Usage:* build. run. wait :)
