@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Net.Http;
 using System.Collections;
 using CardboardBox.Epub;
+using serialEbook;
 
 namespace SerialEbook
 {
@@ -10,7 +11,7 @@ namespace SerialEbook
     {
         public static void Main(string[] args)
         {
-            var serial = new PracticalGuideToEvil();
+            var serial = new Twig();
             Task.WaitAll(ConvertSerial(serial));
         }
 

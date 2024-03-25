@@ -19,10 +19,17 @@ namespace serialEbook
 
         public Func<HtmlDocument, string> FindBody => htmlDoc => TitleElement(htmlDoc).OuterHtml + "\n" 
                                                                     + htmlDoc.DocumentNode
-                                                                        .SelectNodes("//div[@class='entry-content']/p[not(descendant::a) or normalize-space() != '']")                                                                        
+                                                                        .SelectNodes("//div[@class='entry-content']/p[not(descendant::a)]")                                                                        
                                                                         .Select(n => n.OuterHtml).Aggregate(string.Concat);
 
-        public Func<HtmlDocument, string> FindNextChapterlink => htmlDoc => htmlDoc.DocumentNode.SelectSingleNode("//div[@class='entry-content']//a[text()='Next']").GetAttributeValue<string>("href","");
+        public Func<HtmlDocument, string> FindNextChapterlink => htmlDoc => 
+        {
+            var url = htmlDoc.DocumentNode
+                .SelectSingleNode("//a[text()='Next' or descendant::strong[text()='Next']]")
+                ?.GetAttributeValue<string>("href","") ?? "";
+            
+            return url.StartsWith("//") ? $"https:{url}" : url; // wtf wildbow
+        };                                                        
 
     }
 }
