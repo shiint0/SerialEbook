@@ -3,3 +3,5 @@ obj
 packages
 .vscode
 git
+*.epub
+*.log

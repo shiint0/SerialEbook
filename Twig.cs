@@ -1,28 +1,31 @@
+using CardboardBox.Epub;
 using HtmlAgilityPack;
 using SerialEbook;
 
-namespace serialEbook
+namespace SerialEbook
 {
-    public class Twig : ISerialInfo
+    public class Twig : Serial
     {
-        public string Title => "Twig";
+        public Twig(HttpClient httpClient) : base(httpClient)
+        {
+        }
 
-        public string Subtitle => "";
+        public override string Title => "Twig";
 
-        public string Author => "Wildbow";
+        public override string Subtitle => "";
 
-        public string StartUrl => "https://twigserial.wordpress.com/2014/12/24/taking-root-1-1/";
+        public override string Author => "Wildbow";
 
-        public string StyleSheet => ":root { --font-headings: unset; --font-base: unset; --font-headings-default: -apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,Oxygen-Sans,Ubuntu,Cantarell,\"Helvetica Neue\",sans-serif; --font-base-default: -apple-system,BlinkMacSystemFont,\"Segoe UI\",Roboto,Oxygen-Sans,Ubuntu,Cantarell,\"Helvetica Neue\",sans-serif;}";
-        private Func<HtmlDocument, HtmlNode> TitleElement => htmlDoc => htmlDoc.DocumentNode.SelectSingleNode("//h1[@class=\"entry-title\"]");
-        public Func<HtmlDocument, string> FindTitle => htmlDoc => TitleElement(htmlDoc).InnerText;
+        public override string StartUrl => "https://twigserial.wordpress.com/2014/12/24/taking-root-1-1/";
 
-        public Func<HtmlDocument, string> FindBody => htmlDoc => TitleElement(htmlDoc).OuterHtml + "\n" 
-                                                                    + htmlDoc.DocumentNode
-                                                                        .SelectNodes("//div[@class='entry-content']/p[not(descendant::a) or normalize-space() != '']")                                                                        
-                                                                        .Select(n => n.OuterHtml).Aggregate(string.Concat);
+        protected override Func<HtmlDocument, string> NextChapterUrl => htmlDoc =>
+        {
+            var url = htmlDoc.DocumentNode
+                        .SelectSingleNode("//a[text()='Next' or descendant::strong[text()='Next']]")
+                        ?.GetAttributeValue<string>("href", "");
 
-        public Func<HtmlDocument, string> FindNextChapterlink => htmlDoc => htmlDoc.DocumentNode.SelectSingleNode("//div[@class='entry-content']//a[text()='Next']").GetAttributeValue<string>("href","");
-
+            return url?.StartsWith("//") == true ? $"https:{url}" : url; // wtf wildbow
+        };
+        
     }
 }

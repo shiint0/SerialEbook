@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Net.Http;
 using System.Collections;
+using System.Linq;
 using CardboardBox.Epub;
 
 namespace SerialEbook
@@ -10,13 +11,12 @@ namespace SerialEbook
     {
         public static void Main(string[] args)
         {
-            var serial = new PracticalGuideToEvil();
+            var serial = new Twig(new HttpClient());
             Task.WaitAll(ConvertSerial(serial));
         }
 
-        public static async Task ConvertSerial<T>(T serial) where T : ISerialInfo, new()
-        {
-            var chapterPipeline = new ChapterPipeline<T>(serial);
+        public static async Task ConvertSerial<T>(T serial) where T : ISerialInfo
+        {            
             var fileName = $"{serial.Title}.epub";
 
             await using (var epub = EpubBuilder.Create(serial.Title, fileName))
@@ -27,9 +27,8 @@ namespace SerialEbook
                 
                 if((serial.StyleSheet ?? "") != "")
                     await builder.AddStylesheet("default", serial.StyleSheet);
-                
-               
-                await chapterPipeline.ForEachAwaitAsync((chapter, index) => builder.AddChapter(chapter.Title, cb => cb.AddPage($"{index}-{chapter.Title}", chapter.Body)));
+
+                Task.WaitAll(serial.ProcessInto(builder).ToEnumerable().ToArray());
             }            
         }
     }
