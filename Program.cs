@@ -11,7 +11,7 @@ namespace SerialEbook
     {
         public static void Main(string[] args)
         {
-            var serial = new Twig(new HttpClient());
+            var serial = new Pale(new HttpClient());
             Task.WaitAll(ConvertSerial(serial));
         }
 
