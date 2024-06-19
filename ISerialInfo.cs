@@ -71,9 +71,23 @@ namespace SerialEbook
                                                                                     .SelectSingleNode("//div[@class='entry-content']//a[text()='Next']")
                                                                                     ?.GetAttributeValue<string>("href","") ?? "";
 
-        protected virtual async Task<string> LoadChapter(string url)
+        protected virtual async Task<string> LoadChapter(string url, int retry = 0)
         {
-            return await httpClient.GetStringAsync(url);
+            try
+            {
+                return await httpClient.GetStringAsync(url);
+            }
+            catch(HttpRequestException e)
+            {
+                Console.WriteLine(e.Message);
+                if (e.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+                    await Task.Delay(1000);
+                
+                if(retry <= 10)
+                    return await LoadChapter(url, retry+1);
+
+                throw;                
+            }
         }
 
         protected virtual Task BuildChapter(IChapterBuilder cb, HtmlDocument doc, int chapterIndex)
