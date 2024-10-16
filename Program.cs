@@ -11,7 +11,7 @@ namespace SerialEbook
     {
         public static void Main(string[] args)
         {
-            var serial = new Pale(new HttpClient());
+            var serial = new JashinAverage(new HttpClient());
             Task.WaitAll(ConvertSerial(serial));
         }
 
