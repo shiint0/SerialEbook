@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using System.Web;
 using CardboardBox.Epub;
 using HtmlAgilityPack;
@@ -32,8 +33,20 @@ namespace SerialEbook
         {
             var decoded = Decode(unformatted);
             var withFixedBrs = FixBrElements(decoded);
-            return withFixedBrs;
+            var withoutAngleBrackets = ReplaceAngleBrackets(withFixedBrs);
+            return withoutAngleBrackets;
         }
+
+        protected virtual string ReplaceAngleBrackets(string withAngleBrackets)
+        {
+            var withoutOpenBrackets = Regex.Replace(withAngleBrackets, OpenTagRegex, "[");
+            var withoutAngleBrackets = Regex.Replace(withoutOpenBrackets, CloseTagRegex, "]");
+            return withoutAngleBrackets;
+        }
+
+        protected virtual string Tags => "div|p|span|a|b|i|ul|li|ol|h1|h2|h3|h4|h5|h6|em|strong|br|img|hr|input|link|meta";
+        protected virtual string OpenTagRegex => $@"<(?!(\/?({Tags})\b))";
+        protected virtual string CloseTagRegex=> $@"(?<!<\/?({Tags}))>";
 
 
         protected virtual string FormatChapterTitle(string unformatted)
@@ -61,14 +74,16 @@ namespace SerialEbook
                 .Replace("< br>", "<br/>")
                 .Replace("< br >", "<br/>");
         }
+
+        protected virtual string EntryContentClass => "entry-content";
         protected virtual Func<HtmlDocument, HtmlNode> TitleElement => htmlDoc => htmlDoc.DocumentNode.SelectSingleNode("//h1[@class=\"entry-title\"]");
-        protected virtual Func<HtmlDocument, string> FindChapterTitle => htmlDoc => TitleElement(htmlDoc).InnerText;
+        protected virtual Func<HtmlDocument, string> FindChapterTitle => htmlDoc => TitleElement(htmlDoc)?.InnerText ?? "";
         protected Func<HtmlDocument, string> ChapterTitle => htmlDoc => FormatChapterTitle(FindChapterTitle(htmlDoc));
         protected virtual Func<HtmlDocument, IEnumerable<HtmlNode>> BodyElements => htmlDoc => htmlDoc.DocumentNode
-                                                                        .SelectNodes("//div[@class='entry-content']/p[not(descendant::a)]");
+                                                                        .SelectNodes($"//div[@class='{EntryContentClass}']/p[not(descendant::a)]");
 
         protected virtual Func<HtmlDocument, string> NextChapterUrl => htmlDoc => htmlDoc.DocumentNode
-                                                                                    .SelectSingleNode("//div[@class='entry-content']//a[text()='Next']")
+                                                                                    .SelectSingleNode($"//div[@class='{EntryContentClass}']//a[text()='Next']")
                                                                                     ?.GetAttributeValue<string>("href","") ?? "";
 
         protected virtual async Task<string> LoadChapter(string url, int retry = 0)
@@ -92,7 +107,7 @@ namespace SerialEbook
 
         protected virtual Task BuildChapter(IChapterBuilder cb, HtmlDocument doc, int chapterIndex)
         {
-            return cb.AddPage($"{chapterIndex}", TitleElement(doc).OuterHtml + "\n" 
+            return cb.AddPage($"{chapterIndex}", (TitleElement(doc)?.OuterHtml ?? "") + "\n" 
                                                     + BodyElements(doc)
                                                     .Select(n => FormatBodyElement(n.OuterHtml)).Aggregate(string.Concat));
         }    
@@ -106,10 +121,9 @@ namespace SerialEbook
                 var chapterHtml = await LoadChapter(chapterUrl);
                 var chapter = new HtmlDocument();
                 chapter.LoadHtml(chapterHtml);
-                Console.WriteLine($"Processing chapter {chapterIndex} {ChapterTitle(chapter)} at {chapterUrl}");
+                Console.WriteLine($"Processing chapter {++chapterIndex} {ChapterTitle(chapter)} at {chapterUrl}");
                 yield return epubBuilder.AddChapter(ChapterTitle(chapter), async cb => await BuildChapter(cb, chapter, chapterIndex));
-                chapterUrl = NextChapterUrl(chapter);
-                chapterIndex++;
+                chapterUrl = NextChapterUrl(chapter);                
             }
         }
     }
