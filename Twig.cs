@@ -21,8 +21,8 @@ namespace SerialEbook
         protected override Func<HtmlDocument, string> NextChapterUrl => htmlDoc =>
         {
             var url = htmlDoc.DocumentNode
-                        .SelectSingleNode("//a[text()='Next' or descendant::strong[text()='Next']]")
-                        ?.GetAttributeValue<string>("href", "");
+                        ?.SelectSingleNode("//a[text()='Next' or descendant::strong[text()='Next']]")
+                        ?.GetAttributeValue<string>("href", "") ?? "";
 
             return url?.StartsWith("//") == true ? $"https:{url}" : url; // wtf wildbow
         };
