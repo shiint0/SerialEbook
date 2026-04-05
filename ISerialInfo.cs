@@ -37,14 +37,16 @@ namespace SerialEbook
             return withoutAngleBrackets;
         }
 
-        protected virtual string ReplaceAngleBrackets(string withAngleBrackets)
+        protected virtual string ReplaceAngleBrackets(string original)
         {
-            var withoutOpenBrackets = Regex.Replace(withAngleBrackets, OpenTagRegex, "[");
-            var withoutAngleBrackets = Regex.Replace(withoutOpenBrackets, CloseTagRegex, "]");
-            return withoutAngleBrackets;
+            var withoutOpenBrackets = Regex.Replace(original, OpenTagRegex, "[");
+            var unknownTagReplaced = original != withoutOpenBrackets;
+            if(unknownTagReplaced) // replace closing tag as well
+                return Regex.Replace(withoutOpenBrackets, CloseTagRegex, "]");
+            return original;
         }
 
-        protected virtual string Tags => "div|p|span|a|b|i|ul|li|ol|h1|h2|h3|h4|h5|h6|em|strong|br|img|hr|input|link|meta";
+        protected virtual string Tags => "div|p|span|a|b|i|ul|li|ol|h1|h2|h3|h4|h5|h6|em|strong|br|img|hr|input|link|meta|sub|sup";
         protected virtual string OpenTagRegex => $@"<(?!(\/?({Tags})\b))";
         protected virtual string CloseTagRegex=> $@"(?<!<\/?({Tags}))>";
 

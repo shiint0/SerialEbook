@@ -11,7 +11,7 @@ namespace SerialEbook
     {
         public static void Main(string[] args)
         {
-            var serial = new JashinAverage(new HttpClient());
+            var serial = new MotherOfLearning(new HttpClient());
             Task.WaitAll(ConvertSerial(serial));
         }
 
@@ -25,7 +25,7 @@ namespace SerialEbook
 
                 builder.Author(serial.Author);
                 
-                if((serial.StyleSheet ?? "") != "")
+                if(!string.IsNullOrWhiteSpace(serial.StyleSheet))
                     await builder.AddStylesheet("default", serial.StyleSheet);
 
                 Task.WaitAll(serial.ProcessInto(builder).ToEnumerable().ToArray());
