@@ -22,11 +22,9 @@ namespace SerialEbook
                                                                                     .SelectSingleNode($"//div[@class='{EntryContentClass}']/p/strong[2]");
         protected override Func<HtmlDocument, IEnumerable<HtmlNode>> BodyElements => htmlDoc =>
         {
-            var piracyMessageStyleElement = htmlDoc.DocumentNode.SelectSingleNode("//style[contains(text(), 'display: none;')]").InnerText;
-            var piracyMessageClass = Regex.Match(piracyMessageStyleElement, @"\.([a-zA-Z0-9]+)\s*\{").Groups.Values.Skip(1).FirstOrDefault()?.Value ?? "";
             return htmlDoc.DocumentNode
                                                                                     .SelectNodes($"//div[@class='{EntryContentClass}']/p[preceding::p]")
-                                                                                    .Where(n => !n.HasClass(piracyMessageClass));
+                                                                                    .Where(n => !n.HasClass(RoyalRoadPiracyClass(htmlDoc)));
         };
 
         protected override Func<HtmlDocument, string> NextChapterUrl => htmlDoc =>

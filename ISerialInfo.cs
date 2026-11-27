@@ -32,12 +32,18 @@ namespace SerialEbook
         protected virtual string FormatBodyElement(string unformatted)
         {
             var decoded = Decode(unformatted);
-            var withFixedBrs = FixBrElements(decoded);
-            var withoutAngleBrackets = ReplaceAngleBrackets(withFixedBrs);
-            return withoutAngleBrackets;
+            var withoutBrokenBrs = FixBrElements(decoded);
+            var withoutDoubleGtLt = ReplaceDoubleGtLt(withoutBrokenBrs);
+            var withoutTags = ReplaceUnknownTags(withoutDoubleGtLt);
+            return withoutTags;
         }
 
-        protected virtual string ReplaceAngleBrackets(string original)
+        protected virtual string ReplaceDoubleGtLt(string with)
+        {
+            return with.Replace("<<", "\"").Replace(">>", "\"");
+        }
+
+        protected virtual string ReplaceUnknownTags(string original)
         {
             var withoutOpenBrackets = Regex.Replace(original, OpenTagRegex, "[");
             var unknownTagReplaced = original != withoutOpenBrackets;
@@ -46,14 +52,21 @@ namespace SerialEbook
             return original;
         }
 
-        protected virtual string Tags => "div|p|span|a|b|i|ul|li|ol|h1|h2|h3|h4|h5|h6|em|strong|br|img|hr|input|link|meta|sub|sup";
+        protected virtual string Tags => "div|p|span|a|b|i|ul|li|ol|h1|h2|h3|h4|h5|h6|em|strong|br|img|hr|input|link|meta|sub|sup|table|tbody|tr|td";
         protected virtual string OpenTagRegex => $@"<(?!(\/?({Tags})\b))";
-        protected virtual string CloseTagRegex=> $@"(?<!<\/?({Tags}))>";
+        protected virtual string CloseTagRegex=> $@"(?<!<\/?({Tags}))\b>+";
 
-
+        protected virtual string RoyalRoadPiracyClass(HtmlDocument htmlDoc)
+        {
+            var piracyMessageStyleElement = htmlDoc.DocumentNode.SelectSingleNode("//style[contains(text(), 'display: none;')]").InnerText;
+            return Regex.Match(piracyMessageStyleElement, @"\.([a-zA-Z0-9]+)\s*\{").Groups.Values.Skip(1).FirstOrDefault()?.Value ?? "";            
+        }
         protected virtual string FormatChapterTitle(string unformatted)
         {
-            var decoded = Decode(unformatted);
+            var decoded = Decode(unformatted)
+                .Replace("?", "")
+                .Replace("*", "-");
+                            
             return PerformColectomy(decoded);
 
         }
@@ -109,12 +122,14 @@ namespace SerialEbook
 
         protected virtual Task BuildChapter(IChapterBuilder cb, HtmlDocument doc, int chapterIndex)
         {
-            return cb.AddPage($"{chapterIndex}", (TitleElement(doc)?.OuterHtml ?? "") + "\n" 
+            var chapterTitle = ChapterTitle(doc);
+            var chapterIndexAndTitle = string.Join(" - ", [chapterIndex.ToString(), chapterTitle]);
+            return cb.AddPage($"{chapterIndexAndTitle}", chapterIndexAndTitle + "\n" 
                                                     + BodyElements(doc)
                                                     .Select(n => FormatBodyElement(n.OuterHtml)).Aggregate(string.Concat));
         }    
 
-        public async IAsyncEnumerable<Task> ProcessInto(IEpubBuilder epubBuilder) 
+        public virtual async IAsyncEnumerable<Task> ProcessInto(IEpubBuilder epubBuilder) 
         {
             var chapterUrl = StartUrl;
             var chapterIndex = 0;
