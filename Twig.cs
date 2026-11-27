@@ -24,7 +24,7 @@ namespace SerialEbook
                         ?.SelectSingleNode("//a[text()='Next' or descendant::strong[text()='Next']]")
                         ?.GetAttributeValue<string>("href", "") ?? "";
 
-            return url?.StartsWith("//") == true ? $"https:{url}" : url; // wtf wildbow
+            return url.StartsWith("//") == true ? $"https:{url}" : url; // wtf wildbow
         };
         
     }
